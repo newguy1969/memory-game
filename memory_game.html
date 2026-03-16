@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grandpa Mark's Magical Memory Game</title>
+<style>
+body {
+  font-family: Arial;
+  text-align: center;
+  background: #87CEEB;
+  margin: 0;
+  padding: 20px;
+}
+h1 { font-size: 42px; }
+#game {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  max-width: 600px;
+  margin: auto;
+  margin-top: 20px;
+}
+.tile {
+  background: #4CAF50 url('') no-repeat center center;
+  background-size: cover;
+  border-radius: 25px;
+  cursor: pointer;
+  transition: transform 0.3s;
+  height: 120px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 50px;
+  color: white;
+  user-select: none;
+}
+.tile.matched { visibility: hidden; }
+button {
+  margin-top: 25px;
+  font-size: 22px;
+  padding: 12px 25px;
+  border-radius: 12px;
+}
+</style>
+</head>
+<body>
+
+<h1>Memory Match</h1>
+<p>Score: <span id="score">0</span></p>
+<div id="game"></div>
+<button onclick="startGame()">Restart Game</button>
+
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+<script>
+// Photos
+const photos = ["grandma.jpeg","grandpa.jpeg","matteo.jpeg","sophie.jpeg","bebe.jpeg","tessa.jpeg"];
+
+let cards = [];
+let flipped = [];
+let score = 0;
+
+// Sounds
+const popSound = new Audio("pop1.wav");
+const winSound = new Audio("cheer1.wav");
+
+function shuffle(array) {
+  for(let i=array.length-1;i>0;i--){
+    let j = Math.floor(Math.random()*(i+1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+}
+
+function startGame() {
+  score = 0;
+  document.getElementById("score").innerText = score;
+  cards = [...photos, ...photos];
+  shuffle(cards);
+
+  const game = document.getElementById("game");
+  game.innerHTML = "";
+
+  cards.forEach(photo => {
+    const tile = document.createElement("div");
+    tile.className = "tile";
+    tile.dataset.photo = photo;
+    tile.innerText = "❓";
+    tile.onclick = () => flipTile(tile);
+    game.appendChild(tile);
+  });
+
+  flipped = [];
+}
+
+function flipTile(tile) {
+  if(tile.classList.contains("matched")) return;
+  if(flipped.includes(tile)) return;
+  if(flipped.length === 2) return;
+
+  // Flip tile to photo
+  tile.style.backgroundImage = `url('${tile.dataset.photo}')`;
+  tile.innerText = "";
+  flipped.push(tile);
+
+  if(flipped.length === 2) {
+    if(flipped[0].dataset.photo === flipped[1].dataset.photo) {
+      setTimeout(() => {
+        flipped.forEach(t => t.classList.add("matched"));
+        score++;
+        document.getElementById("score").innerText = score;
+        popSound.currentTime = 0;
+        popSound.play();
+        flipped = [];
+        if(score === photos.length){
+          winSound.play();
+          launchConfetti();
+        }
+      }, 400);
+    } else {
+      setTimeout(() => {
+        flipped.forEach(t => {
+          t.style.backgroundImage = "";
+          t.innerText = "❓";
+        });
+        flipped = [];
+      }, 800);
+    }
+  }
+}
+
+// Confetti effect
+function launchConfetti() {
+  const duration = 3 * 1000;
+  const end = Date.now() + duration;
+
+  (function frame() {
+    confetti({
+      particleCount: 5,
+      angle: 60,
+      spread: 55,
+      origin: { x: 0 }
+    });
+    confetti({
+      particleCount: 5,
+      angle: 120,
+      spread: 55,
+      origin: { x: 1 }
+    });
+    if (Date.now() < end) requestAnimationFrame(frame);
+  }());
+}
+
+// Start game on load
+startGame();
+</script>
+</body>
+</html>
